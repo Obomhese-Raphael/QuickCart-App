@@ -12,16 +12,21 @@ export const syncUserCreation = inngest.createFunction(
   },
   { event: "clerk/user.created" },
   async ({ event }) => {
-    const { id, first_name, last_name, email_addresses, image_url } =
-      event.data;
-    const userData = {
-      _id: id,
-      email: email_addresses[0].email_address,
-      name: first_name + " " + last_name,
-      imageUrl: image_url,
-    };
-    await connectDB();
-    await User.create(userData);
+    try {
+      const { id, first_name, last_name, email_addresses, image_url } =
+        event.data;
+      const userData = {
+        _id: id,
+        email: email_addresses[0].email_address,
+        name: first_name + " " + last_name,
+        imageUrl: image_url,
+      };
+      await connectDB();
+      await User.create(userData);
+    } catch (error) {
+      console.error("Error in syncUserCreation:", error);
+      throw error; // Re-throw the error to mark the run as failed
+    }
   }
 );
 
@@ -32,16 +37,20 @@ export const syncUserUpdation = inngest.createFunction(
   },
   { event: "clerk/user.updated" },
   async ({ event }) => {
-    const { id, first_name, last_name, email_addresses, image_url } =
-      event.data;
-    const userData = {
-      _id: id,
-      email: email_addresses[0].email_address,
-      name: first_name + " " + last_name,
-      imageUrl: image_url,
-    };
-    await connectDB();
-    await User.findByIdAndUpdate(id);
+    try {
+      const { id, first_name, last_name, email_addresses, image_url } =
+        event.data;
+      const userData = {
+        email: email_addresses[0].email_address,
+        name: first_name + " " + last_name,
+        imageUrl: image_url,
+      };
+      await connectDB();
+      await User.findByIdAndUpdate(id, userData, { new: true });
+    } catch (error) {
+      console.error("Error in syncUserUpdation:", error);
+      throw error;
+    }
   }
 );
 
@@ -52,8 +61,13 @@ export const syncUserDeletion = inngest.createFunction(
   },
   { event: "clerk/user.deleted" },
   async ({ event }) => {
-    const { id } = event.data;
-    await connectDB();
-    await User.findByIdAndDelete(id);
+    try {
+      const { id } = event.data;
+      await connectDB();
+      await User.findByIdAndDelete(id);
+    } catch (error) {
+      console.error("Error in syncUserDeletion:", error);
+      throw error;
+    }
   }
 );
